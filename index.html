@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f2a44">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cestopisec">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Moderní cestopisec</title>
+<style>
+  :root{
+    --ink:#1f2a44; --ink-2:#4a5573; --muted:#8a90a3;
+    --paper:#f6f1e7; --card:#fffdf8; --line:#e6dfd0;
+    --ok:#2f8f5b; --warn:#c98a12; --err:#c2413b;
+    --r:20px;
+    --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{font-family:var(--sans);color:var(--ink);background:var(--paper);
+    background-image:radial-gradient(circle at 20% 0%,#fff8ea 0,transparent 55%),radial-gradient(circle at 100% 100%,#efe6d4 0,transparent 50%);
+    background-attachment:fixed;-webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  .screen{display:none;min-height:100%;padding:calc(var(--safe-t) + 14px) 18px calc(var(--safe-b) + 24px);max-width:640px;margin:0 auto;animation:in .25s ease}
+  .screen.active{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* header */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px}
+  .brand small{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .brand h1{margin:2px 0 0;font-family:var(--serif);font-size:28px;font-weight:600;letter-spacing:-.01em}
+  .chips{display:flex;gap:8px;align-items:center}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:14px;font-weight:600;max-width:150px}
+  .chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .chip svg{width:16px;height:16px;flex:none}
+  .badge[hidden]{display:none}
+  .badge{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--warn);color:#fff;font-size:12px;display:inline-grid;place-items:center}
+
+  .lead{font-family:var(--serif);font-size:18px;color:var(--ink-2);margin:0 0 16px;line-height:1.4}
+
+  /* tiles */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .tile{position:relative;text-align:left;padding:16px 14px 14px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);
+    box-shadow:0 1px 0 rgba(31,42,68,.04),0 6px 18px -10px rgba(31,42,68,.25);min-height:128px;display:flex;flex-direction:column;justify-content:flex-start;transition:transform .12s ease,box-shadow .12s}
+  .tile:active{transform:scale(.97);box-shadow:0 1px 0 rgba(31,42,68,.04)}
+  .ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--c-soft);color:var(--c)}
+  .ico svg{width:26px;height:26px}
+  .tile b{display:block;font-size:16px;line-height:1.2;margin-top:12px}
+  .tile i{display:block;font-style:normal;font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.3}
+
+  .linkrow{display:flex;justify-content:center;margin-top:20px}
+  .ghost{padding:12px 18px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-weight:600;font-size:15px;display:inline-flex;gap:8px;align-items:center}
+  .ghost svg{width:18px;height:18px}
+
+  /* entry */
+  .back{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--ink-2);padding:6px 0;margin-bottom:10px}
+  .back svg{width:20px;height:20px}
+  .entry-head{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .entry-head .ico{width:56px;height:56px;border-radius:18px}
+  .entry-head .ico svg{width:32px;height:32px}
+  .entry-head h2{margin:0;font-family:var(--serif);font-size:26px;font-weight:600}
+  .entry-head p{margin:2px 0 0;color:var(--muted);font-size:14px}
+
+  .gps{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-size:14.5px;margin-bottom:12px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none;position:relative}
+  .gps.searching .dot{background:var(--warn)}
+  .gps.searching .dot::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--warn);animation:pulse 1.4s ease-out infinite}
+  .gps.rough .dot{background:var(--warn)}
+  .gps.good .dot{background:var(--ok)}
+  .gps.error .dot{background:var(--err)}
+  @keyframes pulse{from{opacity:.9;transform:scale(.6)}to{opacity:0;transform:scale(1.6)}}
+  .gps strong{font-weight:600}
+  .gps .acc{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--ink-2);font-weight:600}
+
+  textarea{width:100%;min-height:200px;resize:vertical;padding:16px;border-radius:var(--r);border:1px solid var(--line);background:var(--card);
+    font-family:var(--serif);font-size:18px;line-height:1.5;color:var(--ink);outline:none;box-shadow:inset 0 1px 2px rgba(31,42,68,.05)}
+  textarea:focus{border-color:var(--c,#1f2a44);box-shadow:0 0 0 3px var(--c-soft,#e6e9f2)}
+  .count{text-align:right;font-size:12px;color:var(--muted);margin:6px 4px 14px}
+  .primary{width:100%;padding:17px;border-radius:16px;background:var(--ink);color:#fff;font-size:17px;font-weight:700;letter-spacing:.01em;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 10px 24px -12px rgba(31,42,68,.7)}
+  .primary:disabled{opacity:.45;box-shadow:none}
+  .primary svg{width:20px;height:20px}
+  .hint{font-size:13px;color:var(--muted);text-align:center;margin-top:12px;line-height:1.4}
+
+  /* list */
+  .list{display:flex;flex-direction:column;gap:10px}
+  .item{display:flex;gap:12px;padding:14px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+  .item .ico{width:38px;height:38px;border-radius:12px;flex:none}
+  .item .ico svg{width:22px;height:22px}
+  .item .meta{font-size:12.5px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;margin-bottom:3px}
+  .item .txt{font-family:var(--serif);font-size:15.5px;line-height:1.4;overflow-wrap:anywhere}
+  .st{font-weight:700}
+  .st.sent{color:var(--ok)} .st.wait{color:var(--warn)}
+  .empty{text-align:center;color:var(--muted);padding:40px 10px;font-family:var(--serif);font-size:17px}
+
+  /* modal / overlay */
+  .overlay{position:fixed;inset:0;background:rgba(20,26,40,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:20;padding:16px}
+  .overlay.show{display:flex}
+  .sheet{width:100%;max-width:480px;background:var(--card);border-radius:24px;padding:24px 20px calc(var(--safe-b) + 20px);animation:up .25s ease;text-align:center}
+  @keyframes up{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+  .sheet h3{margin:6px 0 6px;font-family:var(--serif);font-size:22px}
+  .sheet p{margin:0 0 16px;color:var(--ink-2);line-height:1.45}
+  .sheet input{width:100%;padding:15px 16px;border-radius:14px;border:1px solid var(--line);font-size:17px;margin-bottom:12px;background:#fff;outline:none}
+  .sheet input:focus{border-color:var(--ink)}
+  .spinner{width:46px;height:46px;margin:4px auto 10px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--warn);animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .sheet .ghost{margin-top:10px;width:100%;justify-content:center}
+
+  .toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 22px);transform:translate(-50%,30px);opacity:0;background:var(--ink);color:#fff;padding:13px 18px;border-radius:14px;font-weight:600;font-size:15px;transition:.25s;z-index:30;max-width:90%;text-align:center;pointer-events:none}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  .banner{display:none;margin:0 0 16px;padding:12px 14px;border-radius:14px;background:#fff6dc;border:1px solid #f0dfa8;font-size:13.5px;line-height:1.4;color:#6b5512;position:relative;padding-right:36px}
+  .banner.show{display:block}
+  .banner button{position:absolute;right:8px;top:8px;font-size:18px;line-height:1;padding:4px 6px;color:#6b5512}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<section class="screen active" id="home">
+  <div class="top">
+    <div class="brand"><small>Deník z cest</small><h1>Moderní cestopisec</h1></div>
+    <div class="chips">
+      <button class="chip" id="userChip" aria-label="Změnit přezdívku">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        <span id="userName">—</span>
+      </button>
+    </div>
+  </div>
+  <div class="banner" id="iosBanner">Tip: v Safari klepněte na <b>Sdílet</b> → <b>Přidat na plochu</b> a aplikace se bude otevírat jako běžná appka.<button aria-label="Zavřít" id="iosBannerClose">×</button></div>
+  <p class="lead">Co zajímavého právě vidíte? Vyberte téma a zapište svůj postřeh.</p>
+  <div class="grid" id="grid"></div>
+  <div class="linkrow">
+    <button class="ghost" id="openList">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 4h14v16l-7-4-7 4z"/></svg>
+      Moje záznamy <span class="badge" id="pendingBadge" hidden>0</span>
+    </button>
+  </div>
+</section>
+
+<!-- ENTRY -->
+<section class="screen" id="entry">
+  <button class="back" id="backFromEntry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>Zpět</button>
+  <div class="entry-head">
+    <div class="ico" id="entryIco"></div>
+    <div><h2 id="entryTitle"></h2><p id="entryDesc"></p></div>
+  </div>
+  <div class="gps searching" id="gps"><span class="dot"></span><span id="gpsText"><strong>Zjišťuji polohu…</strong></span><span class="acc" id="gpsAcc"></span></div>
+  <textarea id="text" maxlength="1500" placeholder="Popište, co vidíte, slyšíte, čeho si všímáte…"></textarea>
+  <div class="count" id="count">0 / 1500</div>
+  <button class="primary" id="saveBtn" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+    Uložit záznam
+  </button>
+  <p class="hint">Poloha se zjišťuje, zatímco píšete. Nechte prosím stránku otevřenou, dokud se záznam neuloží.</p>
+</section>
+
+<!-- LIST -->
+<section class="screen" id="list">
+  <button class="back" id="backFromList"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>Zpět</button>
+  <div class="top"><div class="brand"><small>Přehled</small><h1>Moje záznamy</h1></div></div>
+  <div class="list" id="items"></div>
+</section>
+
+<!-- nickname -->
+<div class="overlay" id="nickOverlay">
+  <form class="sheet" id="nickForm">
+    <h3>Jak vám máme říkat?</h3>
+    <p>Přezdívka se uloží ke každému vašemu záznamu.</p>
+    <input id="nickInput" maxlength="40" autocomplete="nickname" placeholder="Vaše přezdívka" required>
+    <button class="primary" type="submit">Pokračovat</button>
+  </form>
+</div>
+
+<!-- waiting for location -->
+<div class="overlay" id="waitOverlay">
+  <div class="sheet">
+    <div class="spinner"></div>
+    <h3>Čekám na polohu</h3>
+    <p>Záznam se uloží automaticky, jakmile telefon zjistí, kde jste. Zkuste vyjít na otevřené místo.</p>
+    <button class="ghost" id="cancelWait">Zpět k úpravám</button>
+  </div>
+</div>
+
+<!-- location error -->
+<div class="overlay" id="errOverlay">
+  <div class="sheet">
+    <h3>Poloha není dostupná</h3>
+    <p id="errText"></p>
+    <button class="primary" id="errRetry">Zkusit znovu</button>
+    <button class="ghost" id="errClose">Zavřít</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== Konfigurace ===== */
+const ENDPOINT = 'https://script.google.com/macros/s/AKfycbxvRw3kQk-sZyahYDL0_Y3wlRm3HT4QPBgKUawSfyEWIbDxkgA-oD7S8Ta6J9W-3095fw/exec';
+const TOKEN = '**mapovanÍ_Cestopisů*1';
+const GOOD_ACCURACY_M = 10;
+
+const S = 'fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"';
+const CATEGORIES = [
+  {id:'chovani', name:'Chování lidí', desc:'jak se lidé chovají a jednají',
+   c:'#d4573f', soft:'#fbe4dd',
+   icon:`<svg viewBox="0 0 24 24" ${S}><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.1c2.9.4 5 2.8 5 5.9"/></svg>`},
+  {id:'jazyk', name:'Jazyk a nářečí', desc:'jak se tu mluví a píše',
+   c:'#2f6fb8', soft:'#dde9f7',
+   icon:`<svg viewBox="0 0 24 24" ${S}><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg>`},
+  {id:'vira', name:'Víra a tradice', desc:'zvyky, svátky, náboženství',
+   c:'#8a5bb8', soft:'#ece2f6',
+   icon:`<svg viewBox="0 0 24 24" ${S}><path d="M12 2.8c1.6 2 1.6 3.6 0 5.2-1.6-1.6-1.6-3.2 0-5.2z"/><rect x="9" y="10" width="6" height="10" rx="1.2"/><path d="M5.5 21h13"/></svg>`},
+  {id:'architektura', name:'Architektura a bydlení', desc:'veřejný prostor, jak místo vypadá',
+   c:'#4c7a6b', soft:'#dcebe5',
+   icon:`<svg viewBox="0 0 24 24" ${S}><path d="M4 21V9.5L12 4l8 5.5V21"/><path d="M9.5 21v-6h5v6"/><path d="M3 21h18"/><path d="M8 11h.01M16 11h.01"/></svg>`},
+  {id:'gastronomie', name:'Gastronomie', desc:'jídlo a pití',
+   c:'#c9761a', soft:'#f9e7cf',
+   icon:`<svg viewBox="0 0 24 24" ${S}><path d="M6 3v5.5a2 2 0 0 0 4 0V3M8 10.5V21"/><path d="M17.5 21V3c-2.2 1.2-3.5 4.3-3.5 8h3.5"/></svg>`},
+  {id:'moda', name:'Móda', desc:'co lidé kolem nosí',
+   c:'#c2416e', soft:'#f8dfe8',
+   icon:`<svg viewBox="0 0 24 24" ${S}><path d="M8.5 3.5 3 6.5l2 4 2.5-1V21h9V9.5l2.5 1 2-4-5.5-3c-.6 1.6-1.9 2.6-3.5 2.6S9.1 5.1 8.5 3.5z"/></svg>`},
+  {id:'volny-cas', name:'Volný čas', desc:'zábava, odpočinek a sport',
+   c:'#2a8fa0', soft:'#d9eff2',
+   icon:`<svg viewBox="0 0 24 24" ${S}><circle cx="6" cy="16.5" r="3.5"/><circle cx="18" cy="16.5" r="3.5"/><path d="M6 16.5 9.5 9h6L18 16.5M9.5 9 12 16.5h-6M15 5.5h2.5l-2 3.5"/></svg>`},
+  {id:'kultura', name:'Kultura a umění', desc:'umění, památky, street art',
+   c:'#b08a1e', soft:'#f4ebcc',
+   icon:`<svg viewBox="0 0 24 24" ${S}><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.9-.7-1.3-.7-2.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.7 17 3 12 3z"/><circle cx="7.5" cy="11.5" r="1.1" fill="currentColor"/><circle cx="10" cy="7.3" r="1.1" fill="currentColor"/><circle cx="15" cy="7.6" r="1.1" fill="currentColor"/></svg>`},
+];
+
+/* ===== Úložiště ===== */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const K_NICK='cp_nick', K_QUEUE='cp_queue', K_SENT='cp_sent', K_DRAFT='cp_draft_', K_BANNER='cp_banner_off';
+
+const $ = id => document.getElementById(id);
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() :
+  Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10));
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  window.scrollTo(0, 0);
+}
+let toastT;
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* ===== Přezdívka ===== */
+function nick(){ return store.get(K_NICK, ''); }
+function renderNick(){ $('userName').textContent = nick() || 'Přezdívka'; }
+function askNick(){
+  $('nickInput').value = nick();
+  $('nickOverlay').classList.add('show');
+  setTimeout(() => $('nickInput').focus(), 50);
+}
+$('nickForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('nickInput').value.trim();
+  if(!v) return;
+  store.set(K_NICK, v); renderNick();
+  $('nickOverlay').classList.remove('show');
+});
+$('userChip').onclick = askNick;
+
+/* ===== Dlaždice ===== */
+function paintVars(el, cat){ el.style.setProperty('--c', cat.c); el.style.setProperty('--c-soft', cat.soft); }
+CATEGORIES.forEach(cat => {
+  const b = document.createElement('button');
+  b.className = 'tile'; paintVars(b, cat);
+  b.innerHTML = `<div class="ico">${cat.icon}</div><div><b>${cat.name}</b><i>${cat.desc}</i></div>`;
+  b.onclick = () => openEntry(cat);
+  $('grid').appendChild(b);
+});
+
+/* ===== Poloha ===== */
+let current = null;      // aktuální kategorie
+let best = null;         // nejlepší dosud získaná poloha
+let watchId = null;
+let waitingToSave = false;
+let geoError = null;
+
+function stopWatch(){ if(watchId !== null){ navigator.geolocation.clearWatch(watchId); watchId = null; } }
+
+function startLocating(){
+  stopWatch(); best = null; geoError = null; renderGps();
+  if(!('geolocation' in navigator)){ geoError = 'Tento prohlížeč neumí zjistit polohu.'; renderGps(); return; }
+  watchId = navigator.geolocation.watchPosition(onPos, onGeoErr,
+    {enableHighAccuracy:true, maximumAge:0, timeout:60000});
+}
+
+function onPos(p){
+  const c = p.coords;
+  if(!best || c.accuracy <= best.accuracy){
+    best = {lat:c.latitude, lon:c.longitude, accuracy:c.accuracy};
+  }
+  geoError = null;
+  if(best.accuracy <= GOOD_ACCURACY_M) stopWatch();   // dost přesné – hotovo
+  renderGps();
+  if(waitingToSave) commit();
+}
+
+function onGeoErr(err){
+  if(err.code === 1){
+    geoError = 'Přístup k poloze je zakázán. Povolte ho v nastavení prohlížeče (na iPhonu: Nastavení → Soukromí → Polohové služby → Safari → „Při používání“) a zkuste to znovu.';
+    stopWatch();
+  } else if(err.code === 3){
+    // vypršel čas – zkusíme dál, pokud ještě nic nemáme
+    if(!best){ stopWatch(); watchId = navigator.geolocation.watchPosition(onPos, onGeoErr, {enableHighAccuracy:true, maximumAge:0, timeout:60000}); }
+    return;
+  } else {
+    if(best) return;
+    geoError = 'Telefon zatím nemůže určit polohu. Zkontrolujte, že máte zapnuté polohové služby.';
+  }
+  renderGps();
+  if(waitingToSave && err.code === 1){ waitingToSave = false; $('waitOverlay').classList.remove('show'); showGeoError(); }
+}
+
+function renderGps(){
+  const g = $('gps'), t = $('gpsText'), a = $('gpsAcc');
+  g.className = 'gps';
+  if(geoError && !best){ g.classList.add('error'); t.innerHTML = '<strong>Poloha nedostupná</strong>'; a.textContent = ''; return; }
+  if(!best){ g.classList.add('searching'); t.innerHTML = '<strong>Zjišťuji polohu…</strong>'; a.textContent = ''; return; }
+  const acc = Math.round(best.accuracy);
+  if(best.accuracy <= GOOD_ACCURACY_M){ g.classList.add('good'); t.innerHTML = '<strong>Poloha zjištěna</strong>'; }
+  else {
+    g.classList.add('rough'); if(watchId !== null) g.classList.add('searching');
+    t.innerHTML = watchId !== null ? '<strong>Zpřesňuji polohu…</strong>' : '<strong>Přibližná poloha</strong>';
+  }
+  a.textContent = '± ' + acc + ' m';
+}
+
+function showGeoError(){ $('errText').textContent = geoError || 'Polohu se nepodařilo zjistit.'; $('errOverlay').classList.add('show'); }
+$('errRetry').onclick = () => { $('errOverlay').classList.remove('show'); startLocating(); };
+$('errClose').onclick = () => $('errOverlay').classList.remove('show');
+
+/* ===== Záznam ===== */
+function openEntry(cat){
+  if(!nick()){ askNick(); return; }
+  current = cat;
+  const e = $('entry'); paintVars(e, cat);
+  $('entryIco').innerHTML = cat.icon;
+  $('entryTitle').textContent = cat.name;
+  $('entryDesc').textContent = cat.desc;
+  $('text').value = store.get(K_DRAFT + cat.id, '');
+  updateCount();
+  show('entry');
+  startLocating();
+}
+
+function updateCount(){
+  const v = $('text').value;
+  $('count').textContent = v.length + ' / 1500';
+  $('saveBtn').disabled = v.trim().length < 3;
+  if(current) store.set(K_DRAFT + current.id, v);
+}
+$('text').addEventListener('input', updateCount);
+
+$('saveBtn').onclick = () => {
+  if($('text').value.trim().length < 3) return;
+  $('text').blur();
+  if(best){ commit(); return; }
+  if(geoError && watchId === null){ showGeoError(); return; }
+  waitingToSave = true;
+  $('waitOverlay').classList.add('show');
+};
+$('cancelWait').onclick = () => { waitingToSave = false; $('waitOverlay').classList.remove('show'); };
+
+function commit(){
+  if(!best || !current) return;
+  waitingToSave = false;
+  $('waitOverlay').classList.remove('show');
+  const entry = {
+    id: uid(),
+    ts: new Date().toISOString(),
+    nickname: nick(),
+    x: +best.lon.toFixed(7),
+    y: +best.lat.toFixed(7),
+    accuracy: Math.round(best.accuracy),
+    category: current.name,
+    catId: current.id,
+    text: $('text').value.trim()
+  };
+  const q = store.get(K_QUEUE, []); q.push(entry); store.set(K_QUEUE, q);
+  store.set(K_DRAFT + current.id, '');
+  stopWatch();
+  current = null;
+  show('home');
+  renderPending();
+  toast(navigator.onLine ? 'Záznam uložen, odesílám…' : 'Uloženo v telefonu – odešle se po připojení');
+  flush();
+}
+
+function leaveEntry(){
+  stopWatch(); waitingToSave = false; current = null; show('home');
+}
+$('backFromEntry').onclick = leaveEntry;
+
+/* ===== Odesílání (fronta) ===== */
+let flushing = false;
+async function flush(){
+  if(flushing) return;
+  flushing = true;
+  let sentNow = 0;
+  try{
+    let q = store.get(K_QUEUE, []);
+    for(const e of q.slice()){
+      let res;
+      try{
+        const r = await fetch(ENDPOINT, {
+          method:'POST',
+          headers:{'Content-Type':'text/plain;charset=utf-8'},   // bez CORS preflightu
+          body: JSON.stringify({token:TOKEN, id:e.id, nickname:e.nickname, x:e.x, y:e.y,
+                                accuracy:e.accuracy, category:e.category, text:e.text})
+        });
+        res = await r.json();
+      }catch(err){ break; }               // offline / chyba sítě – zkusíme později
+      if(res && res.ok){
+        q = store.get(K_QUEUE, []).filter(x => x.id !== e.id); store.set(K_QUEUE, q);
+        const s = store.get(K_SENT, []); s.unshift(e); store.set(K_SENT, s.slice(0, 200));
+        sentNow++;
+      } else {
+        if(res && res.error === 'unauthorized') toast('Server odmítl záznam (špatný token). Dejte vědět vyučujícímu.');
+        break;
+      }
+    }
+  } finally {
+    flushing = false;
+    renderPending();
+    if($('list').classList.contains('active')) renderList();
+    if(sentNow) toast(sentNow === 1 ? 'Záznam odeslán ✓' : `Odesláno záznamů: ${sentNow} ✓`);
+  }
+}
+function renderPending(){
+  const n = store.get(K_QUEUE, []).length, b = $('pendingBadge');
+  b.hidden = !n; b.textContent = n;
+}
+window.addEventListener('online', flush);
+document.addEventListener('visibilitychange', () => { if(!document.hidden) flush(); });
+setInterval(flush, 30000);
+
+/* ===== Seznam ===== */
+function esc(s){ return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+function renderList(){
+  const q = store.get(K_QUEUE, []).map(e => ({...e, _st:'wait'}));
+  const s = store.get(K_SENT, []).map(e => ({...e, _st:'sent'}));
+  const all = [...q.reverse(), ...s];
+  const box = $('items');
+  if(!all.length){ box.innerHTML = '<div class="empty">Zatím žádné záznamy.<br>Vydejte se na cestu!</div>'; return; }
+  box.innerHTML = all.map(e => {
+    const cat = CATEGORIES.find(c => c.id === e.catId) || CATEGORIES.find(c => c.name === e.category) || CATEGORIES[0];
+    const d = new Date(e.ts);
+    const when = d.toLocaleDateString('cs-CZ', {day:'numeric', month:'numeric'}) + ' ' + d.toLocaleTimeString('cs-CZ', {hour:'2-digit', minute:'2-digit'});
+    return `<div class="item"><div class="ico" style="--c:${cat.c};--c-soft:${cat.soft}">${cat.icon}</div>
+      <div><div class="meta"><span>${esc(e.category)}</span><span>${when}</span>
+      <span class="st ${e._st}">${e._st === 'sent' ? 'odesláno' : 'čeká na odeslání'}</span></div>
+      <div class="txt">${esc(e.text)}</div></div></div>`;
+  }).join('');
+}
+$('openList').onclick = () => { renderList(); show('list'); flush(); };
+$('backFromList').onclick = () => show('home');
+
+/* ===== iOS tip ===== */
+(function(){
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = window.navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  if(ios && !standalone && !store.get(K_BANNER, false)) $('iosBanner').classList.add('show');
+  $('iosBannerClose').onclick = () => { $('iosBanner').classList.remove('show'); store.set(K_BANNER, true); };
+})();
+
+/* ===== Start ===== */
+renderNick(); renderPending();
+if(!nick()) askNick();
+flush();
+if('serviceWorker' in navigator && location.protocol === 'https:'){
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
