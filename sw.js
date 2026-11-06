@@ -1,5 +1,5 @@
 // Uchová aplikaci v telefonu, aby se otevřela i bez signálu.
-const CACHE = 'cestopisec-v1';
+const CACHE = 'cestopisec-v3';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
