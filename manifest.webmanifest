@@ -1,6 +1,6 @@
 {
-  "name": "Moderní cestopisec",
-  "short_name": "Cestopisec",
+  "name": "Moderní cestopisci",
+  "short_name": "Cestopisci",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

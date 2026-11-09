@@ -8,11 +8,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Cestopisec">
+<meta name="apple-mobile-web-app-title" content="Cestopisci">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
-<title>Moderní cestopisec</title>
+<title>Moderní cestopisci</title>
 <style>
   :root{
     --bg:#0d0f14; --surface:#161922; --surface-2:#1e222d; --line:#2a2f3c;
@@ -137,7 +137,7 @@
 <!-- HOME -->
 <section class="screen active" id="home">
   <div class="top">
-    <div class="brand"><small>Deník z cest</small><h1>Moderní<br>cestopisec</h1></div>
+    <div class="brand"><small>Deník z cest</small><h1>Moderní<br>cestopisci</h1></div>
     <button class="chip" id="userChip" aria-label="Změnit přezdívku">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
       <span id="userName">—</span>
@@ -243,11 +243,11 @@ const CATEGORIES = [
   {id:'chovani',      name:'Chování lidí',           desc:'jak se lidé chovají a jednají',  c1:'#ff6b6b', c2:'#d93a4a'},
   {id:'jazyk',        name:'Jazyk a nářečí',         desc:'jak se tu mluví',                c1:'#4d8dff', c2:'#2a5fd6'},
   {id:'vira',         name:'Víra a tradice',         desc:'zvyky a náboženství',            c1:'#a274ff', c2:'#6f3fd9'},
-  {id:'architektura', name:'Architektura a bydlení', desc:'veřejný prostor, jak místo vypadá', c1:'#22c38a', c2:'#0e8a5f'},
+  {id:'architektura', name:'Bydlení a veřejný prostor', desc:'domácnost, město, venkov, příroda, krajina', c1:'#22c38a', c2:'#0e8a5f'},
   {id:'gastronomie',  name:'Gastronomie',            desc:'jídlo a pití',                   c1:'#ff9f40', c2:'#e0661b'},
-  {id:'moda',         name:'Móda',                   desc:'co lidé kolem nosí',             c1:'#ff5fa2', c2:'#cc2f76'},
-  {id:'volnycas',     name:'Volný čas',              desc:'zábava, odpočinek a sport',      c1:'#20c4d8', c2:'#0b8698'},
-  {id:'kultura',      name:'Kultura a umění',        desc:'umění, galerie, street art',     c1:'#e8b931', c2:'#b07f0a'},
+  {id:'moda',         name:'Móda a vzhled',          desc:'jak lidé okolo vypadají a co nosí na sobě',             c1:'#ff5fa2', c2:'#cc2f76'},
+  {id:'volnycas',     name:'Práce a volný čas',      desc:'zaměstnání, zábava, odpočinek, sport',      c1:'#20c4d8', c2:'#0b8698'},
+  {id:'kultura',      name:'Kultura a umění',        desc:'literatura, hudba, tanec, architektura, street art',     c1:'#e8b931', c2:'#b07f0a'},
 ];
 CATEGORIES.forEach(c => c.icon = svg(ICONS[c.id]));
 
