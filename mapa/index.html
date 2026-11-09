@@ -112,6 +112,16 @@
   .leaflet-control-attribution{background:rgba(13,15,20,.7)!important;color:var(--muted)!important}
   .leaflet-control-attribution a{color:var(--text-2)!important}
   .leaflet-bar{border:1px solid var(--line)!important;border-radius:12px!important;overflow:hidden}
+  .leaflet-control-layers{background:var(--surface-2)!important;color:var(--text)!important;border:1px solid var(--line)!important;border-radius:12px!important;box-shadow:0 10px 30px rgba(0,0,0,.5)!important}
+  .leaflet-control-layers-toggle{width:40px!important;height:40px!important;background-image:none!important;display:grid!important;place-items:center}
+  .leaflet-control-layers-toggle::after{content:"";width:22px;height:22px;background:currentColor;
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M12 3 2 8l10 5 10-5z'/%3E%3Cpath d='m2 13 10 5 10-5'/%3E%3C/svg%3E") center/contain no-repeat;
+            mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M12 3 2 8l10 5 10-5z'/%3E%3Cpath d='m2 13 10 5 10-5'/%3E%3C/svg%3E") center/contain no-repeat}
+  .leaflet-control-layers-toggle{color:var(--text)!important}
+  .leaflet-control-layers-expanded .leaflet-control-layers-toggle{display:none!important}
+  .leaflet-control-layers-expanded{padding:10px 14px 10px 10px!important;font-size:14px;font-family:var(--font)}
+  .leaflet-control-layers-base label{padding:5px 0;cursor:pointer}
+  .leaflet-control-layers-base input{accent-color:#6b7cff;margin-right:6px}
 
   /* mobile */
   @media (max-width:640px){
@@ -223,10 +233,31 @@ const catOf = name => CAT_BY_NAME[norm(name)] || OTHER;
 /* ===== Mapa ===== */
 const map = L.map('map', {zoomControl:true, preferCanvas:false}).setView([49.8, 15.5], 7);
 map.zoomControl.setPosition('bottomright');
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  maxZoom: 20, subdomains: 'abcd',
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-}).addTo(map);
+/* Podkladové mapy – žádná nevyžaduje API klíč */
+const OSM = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+const CARTO = OSM + ' &copy; <a href="https://carto.com/attributions">CARTO</a>';
+const ESRI = 'Tiles &copy; <a href="https://www.esri.com">Esri</a>';
+const carto = (style) => L.tileLayer(`https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`, {maxZoom:20, subdomains:'abcd', attribution:CARTO});
+const esri = (svc, opt = {}) => L.tileLayer(`https://services.arcgisonline.com/ArcGIS/rest/services/${svc}/MapServer/tile/{z}/{y}/{x}`, {maxZoom:20, attribution:ESRI, ...opt});
+const BASEMAPS = {
+  'Tmavá (CARTO)': carto('dark_all'),
+  'Tmavá bez popisků (CARTO)': carto('dark_nolabels'),
+  'Tmavě šedá (Esri)': L.layerGroup([
+    esri('Canvas/World_Dark_Gray_Base', {maxNativeZoom:16}),
+    esri('Canvas/World_Dark_Gray_Reference', {maxNativeZoom:16, attribution:''})
+  ]),
+  'Letecký snímek (Esri)': L.layerGroup([
+    esri('World_Imagery', {maxNativeZoom:19, attribution: ESRI + ', Maxar, Earthstar Geographics'}),
+    carto('dark_only_labels')
+  ]),
+  'Světlá (CARTO)': carto('rastertiles/voyager'),
+};
+const K_BASE = 'cp_map_base';
+let baseName = (() => { try{ return localStorage.getItem(K_BASE); }catch(e){ return null; } })();
+if(!BASEMAPS[baseName]) baseName = 'Tmavá (CARTO)';
+BASEMAPS[baseName].addTo(map);
+L.control.layers(BASEMAPS, null, {position:'bottomright', collapsed:true}).addTo(map);
+map.on('baselayerchange', e => { try{ localStorage.setItem(K_BASE, e.name); }catch(_){} });
 
 function pieSVG(counts, total, size){
   const r = size / 2, inner = r * 0.56;
