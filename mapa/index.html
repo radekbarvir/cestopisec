@@ -233,28 +233,27 @@ const catOf = name => CAT_BY_NAME[norm(name)] || OTHER;
 /* ===== Mapa ===== */
 const map = L.map('map', {zoomControl:true, preferCanvas:false}).setView([49.8, 15.5], 7);
 map.zoomControl.setPosition('bottomright');
-/* Podkladové mapy – žádná nevyžaduje API klíč */
-const OSM = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-const CARTO = OSM + ' &copy; <a href="https://carto.com/attributions">CARTO</a>';
-const ESRI = 'Tiles &copy; <a href="https://www.esri.com">Esri</a>';
-const carto = (style) => L.tileLayer(`https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`, {maxZoom:20, subdomains:'abcd', attribution:CARTO});
+/* Podkladové mapy Esri – nevyžadují API klíč */
+const ESRI = 'Tiles &copy; <a href="https://www.esri.com">Esri</a> — Esri, HERE, Garmin, &copy; OpenStreetMap contributors, and the GIS user community';
 const esri = (svc, opt = {}) => L.tileLayer(`https://services.arcgisonline.com/ArcGIS/rest/services/${svc}/MapServer/tile/{z}/{y}/{x}`, {maxZoom:20, attribution:ESRI, ...opt});
 const BASEMAPS = {
-  'Tmavá (CARTO)': carto('dark_all'),
-  'Tmavá bez popisků (CARTO)': carto('dark_nolabels'),
-  'Tmavě šedá (Esri)': L.layerGroup([
+  'Tmavá': L.layerGroup([
     esri('Canvas/World_Dark_Gray_Base', {maxNativeZoom:16}),
     esri('Canvas/World_Dark_Gray_Reference', {maxNativeZoom:16, attribution:''})
   ]),
-  'Letecký snímek (Esri)': L.layerGroup([
-    esri('World_Imagery', {maxNativeZoom:19, attribution: ESRI + ', Maxar, Earthstar Geographics'}),
-    carto('dark_only_labels')
+  'Tmavá bez popisků': esri('Canvas/World_Dark_Gray_Base', {maxNativeZoom:16}),
+  'Letecký snímek': L.layerGroup([
+    esri('World_Imagery', {maxNativeZoom:19, attribution:'Tiles &copy; <a href="https://www.esri.com">Esri</a> — Esri, Maxar, Earthstar Geographics, and the GIS User Community'}),
+    esri('Reference/World_Boundaries_and_Places', {maxNativeZoom:19, attribution:''})
   ]),
-  'Světlá (CARTO)': carto('rastertiles/voyager'),
+  'Světlá': L.layerGroup([
+    esri('Canvas/World_Light_Gray_Base', {maxNativeZoom:16}),
+    esri('Canvas/World_Light_Gray_Reference', {maxNativeZoom:16, attribution:''})
+  ]),
 };
 const K_BASE = 'cp_map_base';
 let baseName = (() => { try{ return localStorage.getItem(K_BASE); }catch(e){ return null; } })();
-if(!BASEMAPS[baseName]) baseName = 'Tmavá (CARTO)';
+if(!BASEMAPS[baseName]) baseName = 'Tmavá';
 BASEMAPS[baseName].addTo(map);
 L.control.layers(BASEMAPS, null, {position:'bottomright', collapsed:true}).addTo(map);
 map.on('baselayerchange', e => { try{ localStorage.setItem(K_BASE, e.name); }catch(_){} });
